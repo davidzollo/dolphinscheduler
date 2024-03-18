@@ -273,8 +273,14 @@ export default {
     MsgType: 'Msg Type',
     // eslint-disable-next-line quotes
     IsAtAll: "{'@'}All",
+    calledNumber: 'Called phone number',
+    calledShowNumber: 'Call display number',
+    ttsCode: 'TTS Code',
+    address: 'Address',
+    accessKeyId: 'AccessKeyId',
+    accessKeySecret: 'AccessKeySecret',
     annotations: 'Annotations',
-    generatorURL: 'GeneratorURL',
+    generatorURL: 'GeneratorURL'
   },
   k8s_namespace: {
     create_namespace: 'Create Namespace',

@@ -591,6 +591,7 @@ public class ProcessDefinitionServiceImpl extends BaseServiceImpl implements Pro
                     });
             Schedule schedule = scheduleMap.get(pd.getCode());
             pd.setScheduleReleaseState(schedule == null ? null : schedule.getReleaseState());
+            pd.setSchedule(schedule);
         }
 
         PageInfo<ProcessDefinition> pageInfo = new PageInfo<>(pageNo, pageSize);
@@ -2536,6 +2537,7 @@ public class ProcessDefinitionServiceImpl extends BaseServiceImpl implements Pro
             // do nothing if the workflow is already offline
             return;
         }
+
         workflowDefinition.setReleaseState(ReleaseState.OFFLINE);
         processDefinitionDao.updateById(workflowDefinition);
 

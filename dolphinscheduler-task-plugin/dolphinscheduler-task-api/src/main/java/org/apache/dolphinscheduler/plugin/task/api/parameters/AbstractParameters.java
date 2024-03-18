@@ -18,9 +18,12 @@
 package org.apache.dolphinscheduler.plugin.task.api.parameters;
 
 import org.apache.dolphinscheduler.common.utils.JSONUtils;
+import org.apache.dolphinscheduler.plugin.task.api.K8sTaskExecutionContext;
 import org.apache.dolphinscheduler.plugin.task.api.enums.Direct;
+import org.apache.dolphinscheduler.plugin.task.api.enums.ResourceType;
 import org.apache.dolphinscheduler.plugin.task.api.model.Property;
 import org.apache.dolphinscheduler.plugin.task.api.model.ResourceInfo;
+import org.apache.dolphinscheduler.plugin.task.api.parameters.resource.DataSourceParameters;
 import org.apache.dolphinscheduler.plugin.task.api.parameters.resource.ResourceParametersHelper;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -33,13 +36,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
+@Getter
 @Slf4j
 public abstract class AbstractParameters implements IParameters {
+
+    @Setter
+    public List<Property> localParams;
+
+    public List<Property> varPool = new ArrayList<>();
 
     @Override
     public abstract boolean checkParameters();
@@ -49,33 +60,6 @@ public abstract class AbstractParameters implements IParameters {
         return new ArrayList<>();
     }
 
-    /**
-     * local parameters
-     */
-    public List<Property> localParams;
-
-    /**
-     * var pool
-     */
-    public List<Property> varPool;
-
-    /**
-     * get local parameters list
-     *
-     * @return Property list
-     */
-    public List<Property> getLocalParams() {
-        return localParams;
-    }
-
-    public void setLocalParams(List<Property> localParams) {
-        this.localParams = localParams;
-    }
-
-    /**
-     * get local parameters map
-     * @return parameters map
-     */
     public Map<String, Property> getLocalParametersMap() {
         Map<String, Property> localParametersMaps = new LinkedHashMap<>();
         if (localParams != null) {
@@ -84,6 +68,16 @@ public abstract class AbstractParameters implements IParameters {
             }
         }
         return localParametersMaps;
+    }
+
+    public K8sTaskExecutionContext generateK8sTaskExecutionContext(ResourceParametersHelper parametersHelper,
+                                                                   int datasource) {
+        DataSourceParameters dataSourceParameters =
+                (DataSourceParameters) parametersHelper.getResourceParameters(ResourceType.DATASOURCE, datasource);
+        K8sTaskExecutionContext k8sTaskExecutionContext = new K8sTaskExecutionContext();
+        k8sTaskExecutionContext.setConnectionParams(
+                Objects.nonNull(dataSourceParameters) ? dataSourceParameters.getConnectionParams() : null);
+        return k8sTaskExecutionContext;
     }
 
     /**
@@ -118,10 +112,6 @@ public abstract class AbstractParameters implements IParameters {
         return varPoolMap;
     }
 
-    public List<Property> getVarPool() {
-        return varPool;
-    }
-
     public void setVarPool(String varPool) {
         if (StringUtils.isEmpty(varPool)) {
             this.varPool = new ArrayList<>();
@@ -148,8 +138,12 @@ public abstract class AbstractParameters implements IParameters {
             if (StringUtils.isNotEmpty(propValue)) {
                 info.setValue(propValue);
                 addPropertyToValPool(info);
-            } else {
-                log.warn("Cannot find the output parameter {} in the task output parameters", info.getProp());
+                continue;
+            }
+            addPropertyToValPool(info);
+            if (StringUtils.isEmpty(info.getValue())) {
+                log.warn("The output parameter {} value is empty and cannot find the out parameter from task output",
+                        info);
             }
         }
     }

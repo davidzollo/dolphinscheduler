@@ -30,6 +30,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Repository
@@ -53,6 +56,12 @@ public class ProcessInstanceDaoImpl extends BaseDao<ProcessInstance, ProcessInst
         }
     }
 
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
+    public void performTransactionalUpsert(ProcessInstance processInstance) {
+        this.upsertProcessInstance(processInstance);
+    }
+
     /**
      * find last scheduler process instance in the date interval
      *
@@ -73,13 +82,15 @@ public class ProcessInstanceDaoImpl extends BaseDao<ProcessInstance, ProcessInst
      * find last manual process instance interval
      *
      * @param definitionCode process definition code
+     * @param taskCode taskCode
      * @param dateInterval   dateInterval
      * @return process instance
      */
     @Override
-    public ProcessInstance queryLastManualProcessInterval(Long definitionCode, DateInterval dateInterval,
+    public ProcessInstance queryLastManualProcessInterval(Long definitionCode, Long taskCode, DateInterval dateInterval,
                                                           int testFlag) {
         return mybatisMapper.queryLastManualProcess(definitionCode,
+                taskCode,
                 dateInterval.getStartTime(),
                 dateInterval.getEndTime(),
                 testFlag);
