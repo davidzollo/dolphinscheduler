@@ -131,7 +131,7 @@ public class RemoteExecutor implements AutoCloseable {
         int exitCode = -1;
         log.info("Remote shell task run status: {}", logLine);
         if (logLine.contains(STATUS_TAG_MESSAGE)) {
-            String status = logLine.replace(STATUS_TAG_MESSAGE, "").trim();
+            String status = StringUtils.substringAfter(logLine, STATUS_TAG_MESSAGE);
             if (status.equals("0")) {
                 log.info("Remote shell task success");
                 exitCode = 0;
@@ -141,7 +141,6 @@ public class RemoteExecutor implements AutoCloseable {
             }
         }
         cleanData(taskId);
-        log.error("Remote shell task failed");
         return exitCode;
     }
 
@@ -232,8 +231,10 @@ public class RemoteExecutor implements AutoCloseable {
             channel.open();
             channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), 0);
             channel.close();
-            if (channel.getExitStatus() != 0) {
-                throw new TaskException("Remote shell task error, error message: " + err.toString());
+            Integer exitStatus = channel.getExitStatus();
+            if (exitStatus == null || exitStatus != 0) {
+                throw new TaskException(
+                        "Remote shell task error, exitStatus: " + exitStatus + " error message: " + err);
             }
             return out.toString();
         }
